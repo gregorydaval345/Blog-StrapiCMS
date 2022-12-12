@@ -2,11 +2,32 @@ import { GetServerSideProps, NextPage } from 'next'
 import { AxiosResponse } from 'axios'
 import Head from 'next/head'
 import Image from 'next/image'
-import { fetchCategories } from '../http'
-import { ICategory, ICollectionResponse } from '../types'
+import { fetchArticles, fetchCategories } from '../http'
+import { IArticle, ICategory, ICollectionResponse } from '../types'
+import Tabs from "../components/Tabs"
 import { useEffect } from 'react'
+import { useRouter } from 'next/router'
+import { debounce } from '../utils'
+import ArticleList from '../components/ArticleList'
+import qs from 'qs'
 
-const Home: NextPage = ({ }) => {
+interface IPropTypes {
+  categories: {
+    items: ICategory[]
+  },
+
+  articles: {
+    items: IArticle[]
+  }
+}
+
+const Home: NextPage<IPropTypes> = ({ categories, articles }) => {
+  const router = useRouter()
+  console.log('categories', categories)
+
+  const handleSearch = (query: string) => {
+    router.push(`/?search=${query}`)
+  }
 
   useEffect
   return (
@@ -17,14 +38,23 @@ const Home: NextPage = ({ }) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main>
+      {/* Tabs */}
+      <Tabs
+        categories={categories.items}
+        handleOnSearch={debounce(handleSearch, 500)}
+      />
+
+      {/* Articles - list of articles from component */}
+      <ArticleList articles={articles.items} />
+
+      {/* <main>
 
 
         <h1 className='text-primary-dark'>
           Welcome to Daval's blog!
         </h1>
 
-      </main>
+      </main> */}
 
     </div>
   )
@@ -32,14 +62,32 @@ const Home: NextPage = ({ }) => {
 
 export const getServerSideProps: GetServerSideProps = async () => {
 
+  // articles
+
+  const options = {
+    populate: ['author.avatar'],
+    sort: ['id:desc']
+  }
+
+  const queryString = qs.stringify(options)
+  const { data: articles }: AxiosResponse<ICollectionResponse<IArticle[]>> = await fetchArticles(queryString)
+  console.log(JSON.stringify(articles))
+
   // categories
   const { data: categories }: AxiosResponse<ICollectionResponse<ICategory[]>> = await fetchCategories()
 
   console.log('categories', categories)
+
+  console.log('articles', articles)
   return {
     props: {
       categories: {
         items: categories.data
+      },
+
+      articles: {
+        items: articles.data,
+        pagination: articles.meta.pagination
       }
     }
   }
