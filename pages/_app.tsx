@@ -7,12 +7,10 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <div className="container mx-auto">
       <Navbar />
-      <div>
+      <main className='pb-32'>
         <Component {...pageProps}></Component>
-      </div>
-      <div>
-        <Footer />
-      </div>
+      </main>
+      <Footer />
     </div>
   )
 
